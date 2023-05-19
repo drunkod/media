@@ -32,15 +32,7 @@ use std::u64;
 const MAX_BUFFER_SIZE: i32 = 500 * 1024 * 1024;
 
 fn metadata_from_media_info(media_info: &gst_player::PlayerMediaInfo) -> Result<Metadata, ()> {
-    let dur = media_info.duration();
-    let duration = if let Some(dur) = dur {
-        let mut nanos = dur.nseconds();
-        nanos = nanos % 1_000_000_000;
-        let seconds = dur.seconds();
-        Some(time::Duration::new(seconds, nanos as u32))
-    } else {
-        None
-    };
+    let duration = media_info.duration().map(time::Duration::from);
 
     let mut audio_tracks = Vec::new();
     let mut video_tracks = Vec::new();
@@ -598,11 +590,7 @@ impl GStreamerPlayer {
         let observer = self.observer.clone();
         player!(inner).connect_duration_changed(move |_, duration| {
             let mut inner = inner_clone.lock().unwrap();
-            let duration = duration.map(|duration| {
-                let nanos = duration.nseconds();
-                let seconds = duration.seconds();
-                time::Duration::new(seconds, (nanos % 1_000_000_000) as u32)
-            });
+            let duration = duration.map(time::Duration::from);
             let mut updated_metadata = None;
             if let Some(ref mut metadata) = inner.last_metadata {
                 metadata.duration = duration;
