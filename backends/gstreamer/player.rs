@@ -459,13 +459,10 @@ impl GStreamerPlayer {
             .map_err(|e| PlayerError::Backend(e.to_string()))?;
 
         if let Some(ref audio_renderer) = self.audio_renderer {
-            let audio_sink = gst::ElementFactory::make("appsink")
-                .build()
-                .map_err(|_| PlayerError::Backend("appsink creation failed".to_owned()))?;
+            let audio_sink = gst_app::AppSink::builder().build();
 
             pipeline.set_property("audio-sink", &audio_sink);
 
-            let audio_sink = audio_sink.dynamic_cast::<gst_app::AppSink>().unwrap();
             let audio_renderer_ = audio_renderer.clone();
             audio_sink.set_callbacks(
                 gst_app::AppSinkCallbacks::builder()

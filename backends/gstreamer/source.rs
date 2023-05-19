@@ -236,10 +236,7 @@ mod imp {
         // Called once at the very beginning of instantiation of each instance and
         // creates the data structure that contains all our state
         fn with_class(klass: &Self::Class) -> Self {
-            let app_src = gst::ElementFactory::make("appsrc")
-                .build()
-                .map(|elem| elem.downcast::<gst_app::AppSrc>().unwrap())
-                .expect("Could not create appsrc element");
+            let appsrc = gst_app::AppSrc::builder().build();
 
             let pad_templ = klass.pad_template("src").unwrap();
             let ghost_pad = gst::GhostPad::builder_with_template(&pad_templ, Some("src"))
@@ -258,7 +255,7 @@ mod imp {
                     gst::DebugColorFlags::empty(),
                     Some("Servo source"),
                 ),
-                appsrc: app_src,
+                appsrc,
                 srcpad: ghost_pad,
                 position: Mutex::new(Default::default()),
                 seeking: AtomicBool::new(false),

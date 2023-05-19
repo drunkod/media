@@ -128,11 +128,7 @@ impl GStreamerRender {
         &self,
         pipeline: &gst::Element,
     ) -> Result<gst_app::AppSink, PlayerError> {
-        let appsink = gst::ElementFactory::make("appsink")
-            .build()
-            .map_err(|_| PlayerError::Backend("appsink creation failed".to_owned()))?
-            .downcast::<gst_app::AppSink>()
-            .unwrap();
+        let appsink = gst_app::AppSink::builder().build();
 
         if let Some(render) = self.render.as_ref() {
             render.build_video_sink(appsink.upcast_ref(), pipeline)?

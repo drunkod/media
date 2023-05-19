@@ -54,14 +54,16 @@ impl GStreamerAudioStreamReader {
             .property("caps", caps)
             .build()
             .map_err(|_| "capsfilter creation failed".to_owned())?;
-        let sink = gst::ElementFactory::make("appsink")
-            .property("sync", false)
-            .build()
-            .map_err(|_| "appsink creation failed".to_owned())?;
+        let appsink = gst_app::AppSink::builder().sync(false).build();
 
-        let appsink = sink.clone().dynamic_cast::<gst_app::AppSink>().unwrap();
-
-        let elements = [&element, &capsfilter0, &split, &convert, &capsfilter, &sink];
+        let elements = [
+            &element,
+            &capsfilter0,
+            &split,
+            &convert,
+            &capsfilter,
+            appsink.upcast_ref(),
+        ];
         pipeline
             .add_many(&elements[1..])
             .map_err(|_| "pipeline adding failed".to_owned())?;

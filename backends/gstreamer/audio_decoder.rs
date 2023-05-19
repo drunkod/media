@@ -35,14 +35,7 @@ impl AudioDecoder for GStreamerAudioDecoder {
         let pipeline = gst::Pipeline::new(None);
         let callbacks = Arc::new(callbacks);
 
-        let appsrc = match gst::ElementFactory::make("appsrc").build() {
-            Ok(appsrc) => appsrc,
-            _ => {
-                return callbacks.error(AudioDecoderError::Backend(
-                    "appsrc creation failed".to_owned(),
-                ));
-            }
-        };
+        let appsrc = gst_app::AppSrc::builder().build();
 
         let decodebin = match gst::ElementFactory::make("decodebin").build() {
             Ok(decodebin) => decodebin,
@@ -56,15 +49,13 @@ impl AudioDecoder for GStreamerAudioDecoder {
         // decodebin uses something called a "sometimes-pad", which is basically
         // a pad that will show up when a certain condition is met,
         // in decodebins case that is media being decoded
-        if let Err(e) = pipeline.add_many(&[&appsrc, &decodebin]) {
+        if let Err(e) = pipeline.add_many(&[appsrc.upcast_ref(), &decodebin]) {
             return callbacks.error(AudioDecoderError::Backend(e.to_string()));
         }
 
-        if let Err(e) = gst::Element::link_many(&[&appsrc, &decodebin]) {
+        if let Err(e) = gst::Element::link_many(&[appsrc.upcast_ref(), &decodebin]) {
             return callbacks.error(AudioDecoderError::Backend(e.to_string()));
         }
-
-        let appsrc = appsrc.downcast::<gst_app::AppSrc>().unwrap();
 
         let options = options.unwrap_or_default();
 
@@ -190,11 +181,7 @@ impl AudioDecoder for GStreamerAudioDecoder {
                         let queue = gst::ElementFactory::make("queue").build().map_err(|_| {
                             AudioDecoderError::Backend("queue creation failed".to_owned())
                         })?;
-                        let sink = gst::ElementFactory::make("appsink").build().map_err(|_| {
-                            AudioDecoderError::Backend("appsink creation failed".to_owned())
-                        })?;
-                        let appsink = sink.clone().dynamic_cast::<gst_app::AppSink>().unwrap();
-                        sink.set_property("sync", false);
+                        let appsink = gst_app::AppSink::builder().sync(false).build();
 
                         let callbacks_ = callbacks.clone();
                         appsink.set_callbacks(
@@ -243,7 +230,7 @@ impl AudioDecoder for GStreamerAudioDecoder {
                                 .build(),
                         );
 
-                        let elements = &[&queue, &sink];
+                        let elements = &[&queue, appsink.upcast_ref()];
                         pipeline
                             .add_many(elements)
                             .map_err(|e| AudioDecoderError::Backend(e.to_string()))?;

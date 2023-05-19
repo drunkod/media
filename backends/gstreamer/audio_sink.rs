@@ -30,10 +30,7 @@ impl GStreamerAudioSink {
         }
         gst::init().map_err(|_| AudioSinkError::Backend("GStreamer init failed".to_owned()))?;
 
-        let appsrc = gst::ElementFactory::make("appsrc")
-            .build()
-            .map_err(|_| AudioSinkError::Backend("appsrc creation failed".to_owned()))?;
-        let appsrc = appsrc.downcast::<AppSrc>().unwrap();
+        let appsrc = AppSrc::builder().build();
 
         Ok(Self {
             pipeline: gst::Pipeline::new(None),
@@ -98,7 +95,7 @@ impl AudioSink for GStreamerAudioSink {
             })
             .unwrap();
 
-        let appsrc = self.appsrc.as_ref().clone().upcast();
+        let appsrc = self.appsrc.upcast_ref();
         let resample = gst::ElementFactory::make("audioresample")
             .build()
             .map_err(|_| AudioSinkError::Backend("audioresample creation failed".to_owned()))?;
@@ -109,9 +106,9 @@ impl AudioSink for GStreamerAudioSink {
             .build()
             .map_err(|_| AudioSinkError::Backend("autoaudiosink creation failed".to_owned()))?;
         self.pipeline
-            .add_many(&[&appsrc, &resample, &convert, &sink])
+            .add_many(&[appsrc, &resample, &convert, &sink])
             .map_err(|e| AudioSinkError::Backend(e.to_string()))?;
-        gst::Element::link_many(&[&appsrc, &resample, &convert, &sink])
+        gst::Element::link_many(&[appsrc, &resample, &convert, &sink])
             .map_err(|e| AudioSinkError::Backend(e.to_string()))?;
 
         Ok(())
@@ -129,7 +126,7 @@ impl AudioSink for GStreamerAudioSink {
 
         // Do not set max bytes or callback, we will push as needed
 
-        let appsrc = self.appsrc.as_ref().clone().upcast();
+        let appsrc = self.appsrc.upcast_ref();
         let convert = gst::ElementFactory::make("audioconvert")
             .build()
             .map_err(|_| AudioSinkError::Backend("audioconvert creation failed".to_owned()))?;
@@ -141,9 +138,9 @@ impl AudioSink for GStreamerAudioSink {
             .clone();
 
         self.pipeline
-            .add_many(&[&appsrc, &convert, &sink])
+            .add_many(&[appsrc, &convert, &sink])
             .map_err(|e| AudioSinkError::Backend(e.to_string()))?;
-        gst::Element::link_many(&[&appsrc, &convert, &sink])
+        gst::Element::link_many(&[appsrc, &convert, &sink])
             .map_err(|e| AudioSinkError::Backend(e.to_string()))?;
 
         Ok(())
