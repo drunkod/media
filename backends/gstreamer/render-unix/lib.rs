@@ -269,7 +269,7 @@ impl Render for RenderUnix {
         *self.gl_upload.lock().unwrap() = loop {
             match iter.next() {
                 Ok(Some(element)) => {
-                    if "glupload" == element.factory().unwrap().name() {
+                    if Some(true) == element.factory().map(|f| f.name() == "glupload") {
                         break Some(element);
                     }
                 }
