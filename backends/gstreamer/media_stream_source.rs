@@ -145,28 +145,6 @@ mod imp {
         fn with_class(_klass: &Self::Class) -> Self {
             let flow_combiner = Arc::new(Mutex::new(UniqueFlowCombiner::new()));
 
-            fn create_ghost_pad_with_template(
-                name: &str,
-                pad_template: &gst::PadTemplate,
-                flow_combiner: Arc<Mutex<UniqueFlowCombiner>>,
-            ) -> gst::GhostPad {
-                gst::GhostPad::builder_with_template(pad_template, Some(name))
-                    .chain_function({
-                        move |pad, parent, buffer| {
-                            let chain_result = gst::ProxyPad::chain_default(pad, parent, buffer);
-                            let result = flow_combiner
-                                .lock()
-                                .unwrap()
-                                .update_pad_flow(pad, chain_result);
-                            if result == Err(gst::FlowError::Flushing) {
-                                return chain_result;
-                            }
-                            result
-                        }
-                    })
-                    .build()
-            }
-
             let audio_proxysrc = gst::ElementFactory::make("proxysrc")
                 .build()
                 .expect("Could not create proxysrc element");
@@ -294,6 +272,27 @@ mod imp {
     }
 }
 
+fn create_ghost_pad_with_template(
+    name: &str,
+    pad_template: &gst::PadTemplate,
+    flow_combiner: Arc<Mutex<UniqueFlowCombiner>>,
+) -> gst::GhostPad {
+    gst::GhostPad::builder_with_template(pad_template, Some(name))
+        .chain_function({
+            move |pad, parent, buffer| {
+                let chain_result = gst::ProxyPad::chain_default(pad, parent, buffer);
+                let result = flow_combiner
+                    .lock()
+                    .unwrap()
+                    .update_pad_flow(pad, chain_result);
+                if result == Err(gst::FlowError::Flushing) {
+                    return chain_result;
+                }
+                result
+            }
+        })
+        .build()
+}
 // Public part of the ServoMediaStreamSrc type. This behaves like a normal
 // GObject binding
 glib::wrapper! {
