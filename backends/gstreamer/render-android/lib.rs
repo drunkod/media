@@ -202,10 +202,7 @@ impl Render for RenderAndroid {
         bus.set_sync_handler(move |_, msg| {
             match msg.view() {
                 gst::MessageView::NeedContext(ctxt) => {
-                    if let Some(el) = msg
-                        .src()
-                        .map(|s| s.clone().downcast::<gst::Element>().unwrap())
-                    {
+                    if let Some(el) = msg.src().and_then(|s| s.downcast_ref::<gst::Element>()) {
                         let context_type = ctxt.context_type();
                         if context_type == *gst_gl::GL_DISPLAY_CONTEXT_TYPE {
                             let ctxt = gst::Context::new(context_type, true);

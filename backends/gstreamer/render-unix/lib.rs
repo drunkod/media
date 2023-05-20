@@ -232,34 +232,33 @@ impl Render for RenderUnix {
         pipeline.set_property("video-sink", &vsinkbin);
 
         let bus = pipeline.bus().expect("pipeline with no bus");
-        let display_ = self.display.clone();
-        let context_ = self.app_context.clone();
-        bus.set_sync_handler(move |_, msg| {
-            match msg.view() {
-                gst::MessageView::NeedContext(ctxt) => {
-                    if let Some(el) = msg
-                        .src()
-                        .map(|s| s.clone().downcast::<gst::Element>().unwrap())
-                    {
-                        let context_type = ctxt.context_type();
-                        if context_type == *gst_gl::GL_DISPLAY_CONTEXT_TYPE {
-                            let ctxt = gst::Context::new(context_type, true);
-                            ctxt.set_gl_display(&display_);
-                            el.set_context(&ctxt);
-                        } else if context_type == "gst.gl.app_context" {
-                            let mut ctxt = gst::Context::new(context_type, true);
-                            {
-                                let s = ctxt.get_mut().unwrap().structure_mut();
-                                s.set_value("context", context_.to_send_value());
+        bus.set_sync_handler({
+            let display = self.display.clone();
+            let context = self.app_context.clone();
+            move |_, msg| {
+                match msg.view() {
+                    gst::MessageView::NeedContext(ctxt) => {
+                        if let Some(el) = msg.src().and_then(|s| s.downcast_ref::<gst::Element>()) {
+                            let context_type = ctxt.context_type();
+                            if context_type == *gst_gl::GL_DISPLAY_CONTEXT_TYPE {
+                                let ctxt = gst::Context::new(context_type, true);
+                                ctxt.set_gl_display(&display);
+                                el.set_context(&ctxt);
+                            } else if context_type == "gst.gl.app_context" {
+                                let mut ctxt = gst::Context::new(context_type, true);
+                                {
+                                    let s = ctxt.get_mut().unwrap().structure_mut();
+                                    s.set_value("context", context.to_send_value());
+                                }
+                                el.set_context(&ctxt);
                             }
-                            el.set_context(&ctxt);
                         }
                     }
+                    _ => (),
                 }
-                _ => (),
-            }
 
-            gst::BusSyncReply::Pass
+                gst::BusSyncReply::Pass
+            }
         });
 
         let mut iter = vsinkbin

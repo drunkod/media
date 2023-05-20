@@ -83,19 +83,19 @@ impl AddToCaps for Constrain<f64> {
 fn into_caps(set: MediaTrackConstraintSet, format: &str) -> Option<gst::Caps> {
     let mut builder = gst::Caps::builder(format);
     if let Some(w) = set.width {
-        builder = w.add_to_caps("width", 0, 1000000, builder)?;
+        builder = w.add_to_caps("width", 0, 1_000_000, builder)?;
     }
     if let Some(h) = set.height {
-        builder = h.add_to_caps("height", 0, 1000000, builder)?;
+        builder = h.add_to_caps("height", 0, 1_000_000, builder)?;
     }
     if let Some(aspect) = set.aspect {
-        builder = aspect.add_to_caps("pixel-aspect-ratio", 0, 1000000, builder)?;
+        builder = aspect.add_to_caps("pixel-aspect-ratio", 0, 1_000_000, builder)?;
     }
     if let Some(fr) = set.frame_rate {
-        builder = fr.add_to_caps("framerate", 0, 1000000, builder)?;
+        builder = fr.add_to_caps("framerate", 0, 1_000_000, builder)?;
     }
     if let Some(sr) = set.sample_rate {
-        builder = sr.add_to_caps("rate", 0, 1000000, builder)?;
+        builder = sr.add_to_caps("rate", 0, 1_000_000, builder)?;
     }
     Some(builder.build())
 }
