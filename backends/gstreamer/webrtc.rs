@@ -620,11 +620,11 @@ impl GStreamerWebRtcController {
                             }
                             data_channels.remove(&id);
                         }
-                        if !closed_channel {
-                            if register_data_channel(data_channels.clone(), id, channel).is_err() {
-                                warn!("Could not register data channel {:?}", id);
-                                return None;
-                            }
+                        if !closed_channel
+                            && register_data_channel(data_channels.clone(), id, channel).is_err()
+                        {
+                            warn!("Could not register data channel {:?}", id);
+                            return None;
                         }
                     }
                     Err(error) => {

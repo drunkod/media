@@ -37,13 +37,10 @@ impl AudioDecoder for GStreamerAudioDecoder {
 
         let appsrc = gst_app::AppSrc::builder().build();
 
-        let decodebin = match gst::ElementFactory::make("decodebin").build() {
-            Ok(decodebin) => decodebin,
-            _ => {
-                return callbacks.error(AudioDecoderError::Backend(
-                    "decodebin creation failed".to_owned(),
-                ));
-            }
+        let Ok(decodebin) = gst::ElementFactory::make("decodebin").build() else {
+            return callbacks.error(AudioDecoderError::Backend(
+                "decodebin creation failed".to_owned(),
+            ));
         };
 
         // decodebin uses something called a "sometimes-pad", which is basically
@@ -86,15 +83,12 @@ impl AudioDecoder for GStreamerAudioDecoder {
 
             let callbacks = &callbacks_;
             let sender = &sender_;
-            let pipeline = match pipeline_.upgrade() {
-                Some(pipeline) => pipeline,
-                None => {
-                    callbacks.error(AudioDecoderError::Backend(
-                        "Pipeline failed upgrade".to_owned(),
-                    ));
-                    let _ = sender.lock().unwrap().send(());
-                    return;
-                }
+            let Some(pipeline) = pipeline_.upgrade() else {
+                callbacks.error(AudioDecoderError::Backend(
+                    "Pipeline failed upgrade".to_owned(),
+                ));
+                let _ = sender.lock().unwrap().send(());
+                return;
             };
 
             let (is_audio, caps) = {
@@ -123,13 +117,10 @@ impl AudioDecoder for GStreamerAudioDecoder {
                 return;
             }
 
-            let sample_audio_info = match gst_audio::AudioInfo::from_caps(&caps) {
-                Ok(sample_audio_info) => sample_audio_info,
-                _ => {
-                    callbacks.error(AudioDecoderError::Backend("AudioInfo failed".to_owned()));
-                    let _ = sender.lock().unwrap().send(());
-                    return;
-                }
+            let Ok(sample_audio_info) = gst_audio::AudioInfo::from_caps(&caps) else {
+                callbacks.error(AudioDecoderError::Backend("AudioInfo failed".to_owned()));
+                let _ = sender.lock().unwrap().send(());
+                return;
             };
             let channels = sample_audio_info.channels();
             callbacks.ready(channels);

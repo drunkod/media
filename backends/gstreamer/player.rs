@@ -119,18 +119,13 @@ impl PlayerInner {
         // Set input_size to proxy its value, since it
         // could be set by the user before calling .setup().
         self.input_size = size;
-        match self.source {
+        if let Some(PlayerSource::Seekable(ref mut source)) = self.source {
             // The input size is only useful for seekable streams.
-            Some(ref mut source) => {
-                if let PlayerSource::Seekable(source) = source {
-                    source.set_size(if size > 0 {
-                        size as i64
-                    } else {
-                        -1 // live source
-                    });
-                }
-            }
-            _ => (),
+            source.set_size(if size > 0 {
+                size as i64
+            } else {
+                -1 // live source
+            });
         }
         Ok(())
     }
@@ -212,16 +207,14 @@ impl PlayerInner {
     }
 
     pub fn push_data(&mut self, data: Vec<u8>) -> Result<(), PlayerError> {
-        if let Some(ref mut source) = self.source {
-            if let PlayerSource::Seekable(source) = source {
-                if self.enough_data.load(Ordering::Relaxed) {
-                    return Err(PlayerError::EnoughData);
-                }
-                return source
-                    .push_buffer(data)
-                    .map(|_| ())
-                    .map_err(|_| PlayerError::BufferPushFailed);
+        if let Some(PlayerSource::Seekable(ref mut source)) = self.source {
+            if self.enough_data.load(Ordering::Relaxed) {
+                return Err(PlayerError::EnoughData);
             }
+            return source
+                .push_buffer(data)
+                .map(|_| ())
+                .map_err(|_| PlayerError::BufferPushFailed);
         }
         Err(PlayerError::BufferPushFailed)
     }
@@ -261,26 +254,23 @@ impl PlayerInner {
 
     fn set_stream(&mut self, stream: &MediaStreamId, only_stream: bool) -> Result<(), PlayerError> {
         debug_assert!(self.stream_type == StreamType::Stream);
-        if let Some(ref source) = self.source {
-            if let PlayerSource::Stream(source) = source {
-                let stream =
-                    get_stream(stream).expect("Media streams registry does not contain such ID");
-                let mut stream = stream.lock().unwrap();
-                if let Some(mut stream) = stream.as_mut_any().downcast_mut::<GStreamerMediaStream>()
-                {
-                    let playbin = self
-                        .player
-                        .pipeline()
-                        .dynamic_cast::<gst::Pipeline>()
-                        .unwrap();
-                    let clock = gst::SystemClock::obtain();
-                    playbin.set_base_time(*BACKEND_BASE_TIME);
-                    playbin.set_start_time(gst::ClockTime::NONE);
-                    playbin.use_clock(Some(&clock));
+        if let Some(PlayerSource::Stream(ref source)) = self.source {
+            let stream =
+                get_stream(stream).expect("Media streams registry does not contain such ID");
+            let mut stream = stream.lock().unwrap();
+            if let Some(stream) = stream.as_mut_any().downcast_mut::<GStreamerMediaStream>() {
+                let playbin = self
+                    .player
+                    .pipeline()
+                    .dynamic_cast::<gst::Pipeline>()
+                    .unwrap();
+                let clock = gst::SystemClock::obtain();
+                playbin.set_base_time(*BACKEND_BASE_TIME);
+                playbin.set_start_time(gst::ClockTime::NONE);
+                playbin.use_clock(Some(&clock));
 
-                    source.set_stream(&mut stream, only_stream);
-                    return Ok(());
-                }
+                source.set_stream(stream, only_stream);
+                return Ok(());
             }
         }
         Err(PlayerError::SetStreamFailed)
@@ -603,27 +593,30 @@ impl GStreamerPlayer {
             }
         });
 
-        self.video_renderer.clone().map(|video_renderer| {
-            let render = self.render.clone();
-            let observer = self.observer.clone();
+        if let Some(video_renderer) = self.video_renderer.clone() {
             // Set video_sink callbacks.
             inner.lock().unwrap().video_sink.set_callbacks(
                 gst_app::AppSinkCallbacks::builder()
                     .new_preroll(|_| Ok(gst::FlowSuccess::Ok))
-                    .new_sample(move |video_sink| {
-                        let sample = video_sink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
-                        let frame = render
-                            .lock()
-                            .unwrap()
-                            .get_frame_from_sample(sample)
-                            .map_err(|_| gst::FlowError::Error)?;
-                        video_renderer.lock().unwrap().render(frame);
-                        notify!(observer, PlayerEvent::VideoFrameUpdated);
-                        Ok(gst::FlowSuccess::Ok)
+                    .new_sample({
+                        let render = self.render.clone();
+                        let observer = self.observer.clone();
+                        move |video_sink| {
+                            let sample =
+                                video_sink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
+                            let frame = render
+                                .lock()
+                                .unwrap()
+                                .get_frame_from_sample(sample)
+                                .map_err(|_| gst::FlowError::Error)?;
+                            video_renderer.lock().unwrap().render(frame);
+                            notify!(observer, PlayerEvent::VideoFrameUpdated);
+                            Ok(gst::FlowSuccess::Ok)
+                        }
                     })
                     .build(),
             );
-        });
+        }
 
         let (receiver, error_handler_id) = {
             let inner_clone = inner.clone();

@@ -33,7 +33,7 @@ impl GStreamerRegistryScanner {
         self.supported_codecs.contains(codec)
     }
 
-    pub fn are_all_codecs_supported(&self, codecs: &Vec<&str>) -> bool {
+    pub fn are_all_codecs_supported(&self, codecs: &[&str]) -> bool {
         codecs.iter().all(|&codec| self.is_codec_supported(codec))
     }
 

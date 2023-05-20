@@ -118,7 +118,7 @@ mod imp {
 
             // set the stream size (in bytes) to current offset if
             // size is lesser than it
-            let _ = u64::try_from(self.appsrc.size()).and_then(|size| {
+            let _ = u64::try_from(self.appsrc.size()).map(|size| {
                 if pos.offset > size {
                     gst::debug!(
                         self.cat,
@@ -130,7 +130,7 @@ mod imp {
                     let new_size = i64::try_from(pos.offset).unwrap();
                     self.appsrc.set_size(new_size);
                 }
-                Ok(())
+                ()
             });
 
             // Split the received vec<> into buffers that are of a
@@ -176,7 +176,7 @@ mod imp {
                 ret = self.appsrc.push_buffer(buffer);
                 match ret {
                     Ok(_) => (),
-                    Err(gst::FlowError::Eos) | Err(gst::FlowError::Flushing) => {
+                    Err(gst::FlowError::Eos | gst::FlowError::Flushing) => {
                         ret = Ok(gst::FlowSuccess::Ok)
                     }
                     Err(_) => break,

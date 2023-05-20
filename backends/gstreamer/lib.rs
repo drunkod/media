@@ -159,7 +159,8 @@ impl Backend for GStreamerBackend {
         )));
         let mut instances = self.instances.lock().unwrap();
         let entry = instances.entry(*context_id).or_insert(Vec::new());
-        entry.push((id, Arc::downgrade(&player).clone()));
+        let ctx = Arc::downgrade(&player);
+        entry.push((id, ctx));
         player
     }
 
@@ -177,7 +178,8 @@ impl Backend for GStreamerBackend {
         )));
         let mut instances = self.instances.lock().unwrap();
         let entry = instances.entry(*client_context_id).or_insert(Vec::new());
-        entry.push((id, Arc::downgrade(&context).clone()));
+        let ctx = Arc::downgrade(&context);
+        entry.push((id, ctx));
         context
     }
 
@@ -247,8 +249,6 @@ impl Backend for GStreamerBackend {
                     return SupportsMediaType::Maybe;
                 } else if GSTREAMER_REGISTRY_SCANNER.are_all_codecs_supported(&codecs) {
                     return SupportsMediaType::Probably;
-                } else {
-                    return SupportsMediaType::No;
                 }
             }
         }
