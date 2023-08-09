@@ -1,6 +1,6 @@
 export ANDROID_HOME=/home/alex/Android/Sdk
 export NDK_HOME=$ANDROID_HOME/ndk/21.4.7075529
-export GSTREAMER_ROOT_ANDROID=/home/alex/Документы/android/media/examples/android/gstreamer-1.0-android-universal-1.20.7
+export GSTREAMER_ROOT_ANDROID=/home/alex/Загрузки/gstreamer-1.0-android-universal-1.20.0
 
 
 if [[ -z "${GSTREAMER_ROOT_ANDROID}" ]]; then
@@ -8,7 +8,7 @@ if [[ -z "${GSTREAMER_ROOT_ANDROID}" ]]; then
   exit 1
 fi
 
-VERSION=1.20.7
+VERSION=1.20.0
 DATE=`date "+%Y%m%d-%H%M%S"`
 
 rm -rf ./out
@@ -38,17 +38,18 @@ do
 
   echo 'Processing '$GST_LIB
   cd ${GST_LIB}/${LIB}
-  sed -i -e 's?libdir=.*?libdir='`pwd`'?g' pkgconfig/*
-  sed -i -e 's?.* -L${.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
-  sed -i -e 's?Libs:.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
-  sed -i -e 's?Libs.private.*?Libs.private: -lgstreamer_android?g' pkgconfig/*
-  rm -rf pkgconfig/*pc-e*
+  sed -i -e 's?prefix=.*?prefix='${GSTREAMER_ROOT_ANDROID}'/'${TARGET}'?g' pkgconfig/*
+#  sed -i -e 's?libdir=.*?libdir='`pwd`'?g' pkgconfig/*
+#  sed -i -e 's?.* -L${.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
+#  sed -i -e 's?Libs:.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
+#  sed -i -e 's?Libs.private.*?Libs.private: -lgstreamer_android?g' pkgconfig/*
+#  rm -rf pkgconfig/*pc-e*
   cd ../../
   mkdir -p ./out/Gstreamer-$VERSION/$TARGET/lib/
   cp -r ${GST_LIB}/${LIB}/libgstreamer_android.so  ./out/Gstreamer-$VERSION/$TARGET/lib/
-  rm -rf ${GST_LIB}/${LIB}
+#  rm -rf ${GST_LIB}/${LIB}
 done
 
-rm -rf libs obj ${GST_LIB}
+#rm -rf libs obj
 
 echo "\n*** Done ***\n`ls out`"
