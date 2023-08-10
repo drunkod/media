@@ -74,7 +74,7 @@ pub mod android {
     use super::*;
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_mozilla_servomedia_ServoMedia_audioStreamNew(
+    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamNew(
         _: JNIEnv,
         _: JClass,
     ) -> jlong {
@@ -83,7 +83,7 @@ pub mod android {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_mozilla_servomedia_ServoMedia_audioStreamPlay(
+    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamPlay(
         _: JNIEnv,
         _: JClass,
         stream_ptr: jlong,
@@ -93,7 +93,7 @@ pub mod android {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_mozilla_servomedia_ServoMedia_audioStreamStop(
+    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamStop(
         _: JNIEnv,
         _: JClass,
         stream_ptr: jlong,
@@ -103,7 +103,7 @@ pub mod android {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_mozilla_servomedia_ServoMedia_audioStreamDestroy(
+    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamDestroy(
         _: JNIEnv,
         _: JClass,
         stream_ptr: jlong,

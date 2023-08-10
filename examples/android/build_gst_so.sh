@@ -31,22 +31,22 @@ do
     LIB="x86"
   fi;
 
-  GST_LIB="gst-android-build"
+  GST_LIB='gst-build-'${LIB}
 
-  cp -r libs/${LIB}/libgstreamer_android.so ${GST_LIB}/${LIB}
-  cp -r $GSTREAMER_ROOT_ANDROID/${TARGET}/lib/pkgconfig ${GST_LIB}/${LIB}
+  cp -r libs/${LIB}/libgstreamer_android.so ${GST_LIB}
+  cp -r $GSTREAMER_ROOT_ANDROID/${TARGET}/lib/pkgconfig ${GST_LIB}
 
   echo 'Processing '$GST_LIB
-  cd ${GST_LIB}/${LIB}
+  cd ${GST_LIB}
   sed -i -e 's?prefix=.*?prefix='${GSTREAMER_ROOT_ANDROID}'/'${TARGET}'?g' pkgconfig/*
 #  sed -i -e 's?libdir=.*?libdir='`pwd`'?g' pkgconfig/*
 #  sed -i -e 's?.* -L${.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
 #  sed -i -e 's?Libs:.*?Libs: -L${libdir} -lgstreamer_android?g' pkgconfig/*
 #  sed -i -e 's?Libs.private.*?Libs.private: -lgstreamer_android?g' pkgconfig/*
 #  rm -rf pkgconfig/*pc-e*
-  cd ../../
+  cd ../
   mkdir -p ./out/Gstreamer-$VERSION/$TARGET/lib/
-  cp -r ${GST_LIB}/${LIB}/libgstreamer_android.so  ./out/Gstreamer-$VERSION/$TARGET/lib/
+  cp -r ${GST_LIB}/libgstreamer_android.so  ./out/Gstreamer-$VERSION/$TARGET/lib/
 #  rm -rf ${GST_LIB}/${LIB}
 done
 
