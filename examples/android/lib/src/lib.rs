@@ -68,10 +68,20 @@ impl AudioStream {
 pub mod android {
     extern crate jni;
 
+    use self::jni::objects::JObject;
+    use self::jni::sys::jstring;
     use self::jni::objects::JClass;
     use self::jni::sys::jlong;
     use self::jni::JNIEnv;
     use super::*;
+
+    #[no_mangle]
+    pub unsafe extern fn Java_dev_matrix_rust_ServoMedia_textNew(
+        env: JNIEnv,
+        _: JObject
+    ) -> jstring {
+        env.new_string("Hello from rust!").unwrap().into_inner()
+    }
 
     #[no_mangle]
     pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamNew(
@@ -82,34 +92,6 @@ pub mod android {
         Box::into_raw(Box::new(stream)) as jlong
     }
 
-    #[no_mangle]
-    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamPlay(
-        _: JNIEnv,
-        _: JClass,
-        stream_ptr: jlong,
-    ) {
-        let stream = &mut *(stream_ptr as *mut AudioStream);
-        stream.play();
-    }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamStop(
-        _: JNIEnv,
-        _: JClass,
-        stream_ptr: jlong,
-    ) {
-        let stream = &mut *(stream_ptr as *mut AudioStream);
-        stream.stop();
-    }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn Java_dev_matrix_rust_ServoMedia_audioStreamDestroy(
-        _: JNIEnv,
-        _: JClass,
-        stream_ptr: jlong,
-    ) {
-        let _ = Box::from_raw(stream_ptr as *mut AudioStream);
-    }
 }
 
 #[test]

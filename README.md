@@ -117,3 +117,12 @@ Android device. Go to the `examples/android` folder and run:
 source build.sh
 ./run.sh
 ```
+
+cargo apk:
+```
+cargo install cargo-apk
+export ANDROID_SDK_ROOT="${HOME}/android/sdk"
+export ANDROID_NDK_ROOT="/home/alex/Android/Sdk/ndk/25.2.9519653"
+cargo apk build --target aarch64-linux-android
+
+```

@@ -11,3 +11,20 @@ crate-type = ["cdylib"]
 jni = { version = "0.5", default-features = false }
 servo-media = { path = "../../../servo-media" }
 servo-media-auto = { path = "../../../backends/auto" }
+
+# Android-specic configuration follows.
+[package.metadata.android]
+# Name of your APK as shown in the app drawer and in the app switcher
+apk_label = "Hip Startup"
+
+build_targets = [ "aarch64-linux-android" ]
+
+# The target Android API level.
+target_sdk_version = 31
+min_sdk_version = 21
+ 
+# See: https://developer.android.com/guide/topics/manifest/activity-element#screen
+orientation = "portrait"
+
+runtime_libs = "/home/alex/Документы/android/media/examples/android/libs"
+
